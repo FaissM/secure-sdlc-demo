@@ -1,0 +1,37 @@
+name: msdo
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+  security-events: write
+
+jobs:
+  msdo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Microsoft Security DevOps
+        id: msdo
+        uses: microsoft/security-devops-action@v1
+        with:
+          tools: checkov,terrascan
+
+      # Public repos get code scanning for free, which is what draws the findings as inline PR annotations.
+      - name: Upload SARIF to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.msdo.outputs.sarifFile }}
